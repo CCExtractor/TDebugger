@@ -3,7 +3,7 @@ import sys
 import copy
 import time
 import os
-
+from datetime import datetime
 
 class TD:
     def __init__(self, name, line, step, value):
@@ -133,3 +133,83 @@ class TDebugger:
             if elem not in val:
                 curr_logs["actions"].append(
                     {"action": "dict_remove", "var": var, "key": elem})
+
+
+
+
+class Terminal:
+    def __init__(self, results):
+        self.results = results
+
+    def terminal(self):
+
+        logs = self.results["logs"]
+        for step in logs:
+            print("{} - Step {}, line {} - executed {} times so far, total time so far {}s, average time so far {}s".format(
+                datetime.utcfromtimestamp(step["timestamp"]).strftime(
+                    '%Y-%m-%d %H:%M:%S'), step["step"], step["line_num"], step["line_runtime"]["times_executed"],
+                "{0:0.07f}".format(step["line_runtime"]["total_time"]), "{0:0.07f}".format(step["line_runtime"]["total_time"] / step["line_runtime"]["times_executed"],),),)
+
+            print("", end="")
+            if step["actions"]:
+                first = True
+                for action in step["actions"]:
+                    if first:
+                        first = False
+                    else:
+                        print(", ", end="")
+
+                    if action["action"] == "init_var":
+                        action_desc = "variable '{}' created and initiated with {}".format(
+                            action["var"], action["val"])
+                    elif action["action"] == "change_var":
+                        action_desc = "variable '{}' changed from {} to {}".format(
+                            action["var"], action["prev_val"], action["new_val"])
+                    elif action["action"] == "rm_var":
+                        action_desc = "variable '{}' is deleted from memory {} to {}".format(
+                            action["var"], action["prev_val"], action["None"])
+                    elif action["action"] == "list_add":
+                        action_desc = "{}[{}] appended with value {}".format(
+                            action["var"], action["index"], action["val"])
+                    elif action["action"] == "list_change":
+                        action_desc = "{}[{}] changed from {} to {}".format(
+                            action["var"], action["index"], action["prev_val"], action["new_val"])
+                    elif action["action"] == "list_remove":
+                        action_desc = "{}[{}] removed".format(
+                            action["var"], action["index"])
+                    elif action["action"] == "dict_add":
+                        action_desc = "key {} added to {} with value {}".format(
+                            action["key"], action["var"], action["val"])
+                    elif action["action"] == "dict_change":
+                        action_desc = "value of key {} in {} changed from {} to {}".format(
+                            action["key"], action["var"], action["prev_val"], action["new_val"])
+                    elif action["action"] == "dict_remove":
+                        action_desc = "key {} removed from {}".format(
+                            action["key"], action["var"])
+                    print(action_desc, end="")
+                print("")
+        print()
+
+        variablelogs = self.results["variablelogs"]
+        print("", end="")
+        for var in variablelogs:
+            print("Variable '{}' (type {}), initiated in step {}, line {}.".format(
+                var["var"], var["type"], var["vallogs"][0]["step"], var["vallogs"][0]["line"]))
+            if var["range"]:
+                print(
+                    "Value range: {} - {}. ".format(var["range"][0], var["range"][1]), end="")
+            print("Value history: ", end="")
+            print(", ".join("step {} line {}: {}".format(
+                change["step"], change["line"], change["value"]) for change in var["vallogs"]))
+            print()
+        print("", end="")
+
+        linelogs = self.results["linelogs"]
+        print("", end="")
+        for line in linelogs:
+            print("Line {}: executed {} times, total runtime {}s, average runtime {}s".format(line["line_num"], line["times_executed"], "{0:0.07f}".format(line["total_time"]),
+                                                                                              "{0:0.07f}".format(line["total_time"] / line["times_executed"])))
+        print("", end="")
+
+
+
