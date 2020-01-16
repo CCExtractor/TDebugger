@@ -4,6 +4,9 @@ import copy
 import time
 import os
 from datetime import datetime
+import argparse
+import json
+
 
 class TD:
     def __init__(self, name, line, step, value):
@@ -46,10 +49,10 @@ class Line:
 
 
 class TDebugger:
-    def __init__(self, file_path, func_name, func_args):
+    def __init__(self, file_path, function_name, function_args):
         self.file_path = file_path
-        self.func_name = func_name
-        self.func_args = func_args
+        self.function_name = function_name
+        self.function_args = function_args
 
         self.curr_line = None
         self.prev_variables = {}
@@ -58,12 +61,12 @@ class TDebugger:
         self.prev_time = time.time()
         self.step = 0
 
-        self.results = {"code_info": {"filename": os.path.split(self.file_path)[1], "function_name": self.func_name, "function_args": self.func_args}, "logs": [],
+        self.results = {"code_info": {"filename": os.path.split(self.file_path)[1], "function_name": self.function_name, "function_args": self.function_args}, "logs": [],
                         "variablelogs": [], "linelogs": []}
 
     def __trace_calls(self, frame, event, arg):
         self.curr_line = frame.f_lineno
-        if frame.f_code.co_name == self.func_name:
+        if frame.f_code.co_name == self.function_name:
             return self.__trace_lines
 
     def __trace_lines(self, frame, event, arg):
@@ -134,7 +137,24 @@ class TDebugger:
                 curr_logs["actions"].append(
                     {"action": "dict_remove", "var": var, "key": elem})
 
+    def run(self):
+        module_spec = importlib.util.spec_from_file_location(
+            "debugger", self.file_path)
+        module = importlib.util.module_from_spec(module_spec)
+        module_spec.loader.exec_module(module)
+        function = getattr(module, self.function_name)
 
+        sys.settrace(self.__trace_calls)
+        self.prev_time = time.time()
+        function(*self.function_args)
+        sys.settrace(None)
+
+        self.results["variablelogs"] = [var_obj.dictionary()
+                                        for var_obj in self.variablelogs.values()]
+        self.results["linelogs"] = [line_obj.dictionary()
+                                    for line_obj in self.linelogs.values()]
+
+        return self.results
 
 
 class Terminal:
@@ -190,26 +210,60 @@ class Terminal:
                 print("")
         print()
 
-        variablelogs = self.results["variablelogs"]
-        print("", end="")
-        for var in variablelogs:
-            print("Variable '{}' (type {}), initiated in step {}, line {}.".format(
-                var["var"], var["type"], var["vallogs"][0]["step"], var["vallogs"][0]["line"]))
-            if var["range"]:
-                print(
-                    "Value range: {} - {}. ".format(var["range"][0], var["range"][1]), end="")
-            print("Value history: ", end="")
-            print(", ".join("step {} line {}: {}".format(
-                change["step"], change["line"], change["value"]) for change in var["vallogs"]))
-            print()
-        print("", end="")
-
         linelogs = self.results["linelogs"]
         print("", end="")
         for line in linelogs:
-            print("Line {}: executed {} times, total runtime {}s, average runtime {}s".format(line["line_num"], line["times_executed"], "{0:0.07f}".format(line["total_time"]),
-                                                                                              "{0:0.07f}".format(line["total_time"] / line["times_executed"])))
+            print("Line {}: executed {} times, total runtime {}s".format(line["line_num"], line["times_executed"], "{0:0.07f}".format(line["total_time"]),
+                                                                         ))
         print("", end="")
 
 
+def funcarg(argument):
+    try:
+        return int(argument)
+    except ValueError:
+        try:
 
+            return float(argument)
+        except ValueError:
+            return argument
+
+
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawTextHelpFormatter)
+
+debugGroup = parser.add_argument_group(
+    title="Analysis")
+debugGroup.add_argument("--debug", metavar="FILE")
+debugGroup.add_argument("--function", nargs='+', default=["main"])
+debugGroup.add_argument("--output", metavar="FILE")
+
+printGroup = parser.add_argument_group(
+    title="Reporting")
+printGroup.add_argument("--parse", metavar="FILE")
+
+args = parser.parse_args()
+
+if args.debug:
+    debugpwd = args.debug
+    function_name = args.function[0]
+    function_args = [funcarg(arg) for arg in args.function[1:]]
+
+    tdebugger = TDebugger(debugpwd, function_name, function_args)
+    results = tdebugger.run()
+
+    outputpwd = args.output
+    if outputpwd:
+        with open(outputpwd, "w") as f:
+            json.dump(results, f)
+    else:
+        terminal = Terminal(results)
+        terminal.terminal()
+elif args.parse:
+    parse_file_path = args.parse
+    with open(parse_file_path) as f:
+        data = json.load(f)
+    terminal = Terminal(data)
+    terminal.terminal()
+else:
+    print("Run <<\"python3 TDebugger.py --help\">>")
