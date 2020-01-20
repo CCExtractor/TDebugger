@@ -141,6 +141,7 @@ class TDebugger:
         module_spec = importlib.util.spec_from_file_location(
             "debugger", self.file_path)
         module = importlib.util.module_from_spec(module_spec)
+        # print(module),
         module_spec.loader.exec_module(module)
         function = getattr(module, self.function_name)
 
@@ -234,22 +235,25 @@ parser = argparse.ArgumentParser(
 
 debugGroup = parser.add_argument_group(
     title="Analysis")
-debugGroup.add_argument("--debug", metavar="FILE")
-debugGroup.add_argument("--function", nargs='+', default=["main"])
-debugGroup.add_argument("--output", metavar="FILE")
+debugGroup.add_argument("--debug", "-d", metavar="FILE")
+debugGroup.add_argument("--function", "-f", nargs='*',
+                        )
+
+debugGroup.add_argument("--output", "-o", metavar="FILE")
 
 printGroup = parser.add_argument_group(
     title="Reporting")
-printGroup.add_argument("--parse", metavar="FILE")
+printGroup.add_argument("--parse", "-p", metavar="FILE")
 
 args = parser.parse_args()
 
 if args.debug:
     debugpwd = args.debug
     function_name = args.function[0]
-    function_args = [funcarg(arg) for arg in args.function[1:]]
+    function_args = list([funcarg(arg) for arg in args.function[1:]])
 
-    tdebugger = TDebugger(debugpwd, function_name, function_args)
+    tdebugger = TDebugger(debugpwd, function_name,
+                          function_args)
     results = tdebugger.run()
 
     outputpwd = args.output

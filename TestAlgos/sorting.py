@@ -1,13 +1,18 @@
-def bubble_sort(lst):
+
+
+def bubble_sort(lst=[19, 2, 31, 45, 30, 11, 121, 27]):
     for iter_num in range(len(lst) - 1, 0, -1):
         for idx in range(iter_num):
             if lst[idx] > lst[idx + 1]:
                 temp = lst[idx]
                 lst[idx] = lst[idx + 1]
+
                 lst[idx + 1] = temp
+    print(lst)
 
 
-def merge_sort(lst):
+def merge_sort(lst=[64, 34, 25, 12, 22, 11, 90]):
+
     if len(lst) <= 1:
         return lst
     middle = len(lst) // 2
@@ -35,7 +40,7 @@ def merge(left_half, right_half):
     return res
 
 
-def insertion_sort(lst):
+def insertion_sort(lst=[19, 2, 31, 45, 30, 11, 121, 27]):
     for i in range(1, len(lst)):
         j = i - 1
         nxt_element = lst[i]
@@ -45,7 +50,7 @@ def insertion_sort(lst):
         lst[j + 1] = nxt_element
 
 
-def shell_sort(lst):
+def shell_sort(lst=[19, 2, 31, 45, 30, 11, 121, 27]):
     gap = len(lst) // 2
     while gap > 0:
         for i in range(gap, len(lst)):
@@ -65,9 +70,10 @@ def selection_sort(lst):
             if lst[min_idx] > lst[j]:
                 min_idx = j
         lst[idx], lst[min_idx] = lst[min_idx], lst[idx]
-#From https://www.tutorialspoint.com/python_data_structure/python_sorting_algorithms.htm
+# From https://www.tutorialspoint.com/python_data_structure/python_sorting_algorithms.htm
 
-def binary_search(arr, l, r, x):
+
+def binary_search(arr=[2, 3, 4, 10, 40], l=0, r=4, x=10):
     while l <= r:
         mid = l + (r - l) // 2
         if arr[mid] == x:
@@ -79,7 +85,8 @@ def binary_search(arr, l, r, x):
     return -1
 # From https://www.geeksforgeeks.org/binary-search/
 
-def knapsack(W, wt, val, n):
+
+def knapsack(W=50, wt=[10, 20, 30], val=[60, 100, 120], n=3):
     if n == 0 or W == 0:
         return 0
 
@@ -88,3 +95,11 @@ def knapsack(W, wt, val, n):
     else:
         return max(val[n - 1] + knapsack(W - wt[n - 1], wt, val, n - 1), knapsack(W, wt, val, n - 1))
 # From https://www.geeksforgeeks.org/python-program-for-dynamic-programming-set-10-0-1-knapsack-problem/
+
+
+# print(data)
+# merge_sort(data), insertion_sort(
+#     data), selection_sort(data),
+
+# knapsack(50, [10, 20, 30], [60, 100, 120], 3),
+# binary_search([2, 3, 4, 10, 40], 0, 4, 10),
