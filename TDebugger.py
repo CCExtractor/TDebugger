@@ -6,6 +6,11 @@ import os
 from datetime import datetime
 import argparse
 import json
+import pickle
+import inspect
+from PIL import Image, ImageDraw, ImageFont
+import cv2 as cv2
+import numpy
 
 
 class TD:
@@ -158,6 +163,105 @@ class TDebugger:
         return self.results
 
 
+class VideoOutput:
+    def __init__(self, file_path, func_name, results):
+        module_spec = importlib.util.spec_from_file_location(
+            "sourcemodule", file_path)
+        module = importlib.util.module_from_spec(module_spec)
+        module_spec.loader.exec_module(module)
+        func = getattr(module, func_name)
+
+        self.source_lines, self.start_line = inspect.getsourcelines(func)
+        self.results = results
+
+    def framer(self, current_step, variablelogs, frame_size, font_size):
+        background = (0, 0, 0)
+        selectedline = (68, 71, 90)
+        normaltext = (255, 255, 255)
+        updatingtext = (57, 255, 20)
+
+        img = Image.new("RGB", frame_size, color=background)
+
+        draw = ImageDraw.Draw(img)
+        draw.rectangle((0, (current_step['line_num'] - self.start_line) * font_size, frame_size[0] * 0.4, (current_step['line_num'] - self.start_line + 1) * font_size),
+                       fill=selectedline)
+        for line_offset, line in enumerate(self.source_lines):
+            draw.text((0, line_offset * font_size),
+                      self.source_lines[line_offset], fill=normaltext)
+
+        draw.text((0, frame_size[1] * 0.8), "Step: {}, line: {}".format(
+            current_step['step'], current_step['line_num']), fill=normaltext)
+        draw.text((0, frame_size[1] * 0.8 + font_size),
+                  "Times executed: {}, time spent: {}".format(
+                      current_step['line_runtime']['times_executed'], "{0:.2f}".format(current_step['line_runtime']['total_time'])),
+                  fill=normaltext)
+
+        current_text_y = 0
+        variable_changes = {}
+        for action in current_step["actions"]:
+            action_desc = "Illegal action"
+            if action["action"] == "init_var":
+                action_desc = "created"
+            elif action["action"] == "change_var":
+                action_desc = "previous value {}".format(action["prev_val"])
+            elif action["action"] == "list_add":
+                action_desc = "{}[{}] appended with value {}".format(
+                    action["var"], action["index"], action["val"])
+            elif action["action"] == "list_change":
+                action_desc = "{}[{}] changed from {} to {}".format(
+                    action["var"], action["index"], action["prev_val"], action["new_val"])
+            elif action["action"] == "list_remove":
+                action_desc = "{}[{}] removed".format(
+                    action["var"], action["index"])
+            elif action["action"] == "dict_add":
+                action_desc = "key {} added with value {}".format(
+                    action["key"], action["val"])
+            elif action["action"] == "dict_change":
+                action_desc = "value of key {} changed from {} to {}".format(
+                    action["key"], action["prev_val"], action["new_val"])
+            elif action["action"] == "dict_remove":
+                action_desc = "key {} removed".format(action["key"])
+
+            if action["var"] not in variable_changes:
+                variable_changes[action["var"]] = []
+            variable_changes[action["var"]].append(action_desc)
+
+        for variable in variablelogs:
+            curr_value = None
+            for val in variable['vallogs']:
+                if val['step'] > current_step['step']:
+                    break
+                curr_value = val["value"]
+
+            if variable['var'] in variable_changes:
+                message = "Variable {}, value {}, ".format(
+                    variable['var'], curr_value) + ", ".join(variable_changes[variable['var']]) + "."
+                draw.text((frame_size[0] * 0.4 + 5, current_text_y),
+                          message, fill=updatingtext)
+            elif curr_value is not None:
+                draw.text((frame_size[0] * 0.4 + 5, current_text_y), "Variable {}, value {}.".format(
+                    variable['var'], curr_value), fill=normaltext)
+            current_text_y += font_size
+
+        draw.line((frame_size[0] * 0.4, 0, frame_size[0] *
+                   0.4, frame_size[1]), fill=(255, 255, 255), width=5)
+        draw.line((0, frame_size[1] * 0.8, frame_size[0] * 0.4,
+                   frame_size[1] * 0.8), fill=(255, 255, 255), width=5)
+
+        return img
+
+    def generate_video(self, output_path, frame_size=(2000, 1000), font_size=22, fps=1):
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
+
+        for step in self.results["logs"]:
+            img = self.framer(
+                step, self.results["variablelogs"], frame_size, font_size)
+            video.write(cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR))
+
+        video.release()
+
+
 class Terminal:
     def __init__(self, results):
         self.results = results
@@ -244,7 +348,10 @@ debugGroup.add_argument("--output", "-o", metavar="FILE")
 printGroup = parser.add_argument_group(
     title="Reporting")
 printGroup.add_argument("--parse", "-p", metavar="FILE")
-
+videoGroup = parser.add_argument_group(
+    title="Video Reporting", description="Generating a video displaying the program's flow and execution.")
+videoGroup.add_argument("--video", "-v",
+                        metavar=("PYTHON_FILE", "FUNCTION", "ANALYSIS_FILE", "VIDEO_OUTPUT"), nargs=4)
 args = parser.parse_args()
 
 if args.debug:
@@ -263,11 +370,19 @@ if args.debug:
     else:
         terminal = Terminal(results)
         terminal.terminal()
+    with open(
+            "/home/Techno-Disaster/PycharmProjects/TechnoDebugger/result.json", "wb") as f:
+        pickle.dump(results, f)
+
 elif args.parse:
     parse_file_path = args.parse
     with open(parse_file_path) as f:
         data = json.load(f)
     terminal = Terminal(data)
-    terminal.terminal()
+elif args.video:
+    with open(args.video[2], "rb") as f:
+        parsed_data = pickle.load(f)
+    reporter = VideoOutput(args.video[0], args.video[1], parsed_data)
+    reporter.generate_video(args.video[3])
 else:
     print("Run <<\"python3 TDebugger.py --help\">>")
