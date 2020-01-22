@@ -1,2 +1,5 @@
 __pycache__
 result.json
+TDebugger.egg-info
+dist
+build
