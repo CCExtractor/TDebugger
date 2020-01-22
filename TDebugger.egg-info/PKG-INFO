@@ -1,0 +1,32 @@
+Metadata-Version: 2.1
+Name: TDebugger
+Version: 0.1.0
+Summary: A advanced python debugger with live tracing that outputs video logs of a program's execution.
+Home-page: https://github.com/CCExtractor/TDebugger
+Author: Jayesh Nirve
+Author-email: nitinnirve@gmail.com
+License: UNKNOWN
+Description: # TDebugger
+        A advanced python debugger with live tracing
+        ## Installation
+        Use the `pip` package manager to install TDebugger
+        ```shell script
+        pip install TDebugger
+        ```
+        Then, you can run it as a command-line tool:
+        ```shell script
+        TDebugger.py --help
+        ```
+        
+        ## Output:
+        ![video](assets/tdebugger.gif)
+        ![output](https://github.com/Techno-Disaster/TDebugger/blob/master/assets/py6binarysearch.png)
+        
+        
+        
+        Moving to CCextracter.
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Description-Content-Type: text/markdown
