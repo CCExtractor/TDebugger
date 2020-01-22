@@ -333,56 +333,61 @@ def funcarg(argument):
         except ValueError:
             return argument
 
-def main():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter)
 
-    debugGroup = parser.add_argument_group(
-        title="Analysis")
-    debugGroup.add_argument("--debug", "-d", metavar="FILE")
-    debugGroup.add_argument("--function", "-f", nargs='*',
-                            )
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawTextHelpFormatter)
 
-    debugGroup.add_argument("--output", "-o", metavar="FILE")
+debugGroup = parser.add_argument_group(
+    title="Analysis")
+debugGroup.add_argument("--debug", "-d",  help=".\n".join(
+    ["Path of a *.py file to debug", "Example: '--debug/-d main.py' will run the file main.py."]), metavar="FILE")
+debugGroup.add_argument("--function", "-f", help=".\n".join(
+    ["If --debug FILE is present, optionally provide the name of a function to debug and function arguments", "(defaults to main with no arguments)",
+     "Example: '--func/-f foo 10' will run foo(10)."]), nargs='+', default=["main"], metavar=("FUNC", "PARAMETER"))
 
-    printGroup = parser.add_argument_group(
-        title="Reporting")
-    printGroup.add_argument("--parse", "-p", metavar="FILE")
-    videoGroup = parser.add_argument_group(
-        title="Video Reporting", description="Generating a video displaying the program's flow and execution.")
-    videoGroup.add_argument("--video", "-v",
-                            metavar=("PYTHON_FILE", "FUNCTION", "ANALYSIS_FILE", "VIDEO_OUTPUT"), nargs=4)
-    args = parser.parse_args()
 
-    if args.debug:
-        debugpwd = args.debug
-        function_name = args.function[0]
-        function_args = list([funcarg(arg) for arg in args.function[1:]])
+debugGroup.add_argument("--output", "-o", help="./n".join(
+    ["will output the logs in result.json file \nIMPORTANT name output file 'result.json' if you want to create a video later, \nExample: ' TDebugger -d foo.py -f test2 10 -o result.json'"]), metavar="FILE")
 
-        tdebugger = TDebugger(debugpwd, function_name,
-                            function_args)
-        results = tdebugger.run()
+printGroup = parser.add_argument_group(
+    title="Reporting")
+printGroup.add_argument("--parse", "-p", help="./n".join(
+    ["parses a .json file(eg. the result.json file created with --output/-o argument) file in readable format."]), metavar="FILE")
+videoGroup = parser.add_argument_group(
+    title="Video Reporting", description="Generating a video displaying the program's flow and execution.")
+videoGroup.add_argument("--video", "-v",
+                        metavar=("PYTHON_FILE", "FUNCTION", "ANALYSIS_FILE", "VIDEO_OUTPUT"), nargs=4)
+args = parser.parse_args()
 
-        outputpwd = args.output
-        if outputpwd:
-            with open(outputpwd, "w") as f:
-                json.dump(results, f)
-        else:
-            terminal = Terminal(results)
-            terminal.terminal()
-        with open(
-                "./result.json", "wb") as f:
-            pickle.dump(results, f)
+if args.debug:
+    debugpwd = args.debug
+    function_name = args.function[0]
+    function_args = list([funcarg(arg) for arg in args.function[1:]])
 
-    elif args.parse:
-        parse_file_path = args.parse
-        with open(parse_file_path) as f:
-            data = json.load(f)
-        terminal = Terminal(data)
-    elif args.video:
-        with open(args.video[2], "rb") as f:
-            parsed_data = pickle.load(f)
-        reporter = VideoOutput(args.video[0], args.video[1], parsed_data)
-        reporter.generate_video(args.video[3])
+    tdebugger = TDebugger(debugpwd, function_name,
+                          function_args)
+    results = tdebugger.run()
+
+    outputpwd = args.output
+    if outputpwd:
+        with open(outputpwd, "w") as f:
+            json.dump(results, f)
     else:
-        print("Run <<\"python3 TDebugger.py --help\">>")
+        terminal = Terminal(results)
+        terminal.terminal()
+    with open(
+            "./result.json", "wb") as f:
+        pickle.dump(results, f)
+
+elif args.parse:
+    parse_file_path = args.parse
+    with open(parse_file_path) as f:
+        data = json.load(f)
+    terminal = Terminal(data)
+elif args.video:
+    with open(args.video[2], "rb") as f:
+        parsed_data = pickle.load(f)
+    reporter = VideoOutput(args.video[0], args.video[1], parsed_data)
+    reporter.generate_video(args.video[3])
+else:
+    print("Run <<\"TDebugger --help\">>")

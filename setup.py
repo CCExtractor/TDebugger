@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name="TDebugger",
-      version="0.1.0",
+      version="0.1.1",
       packages=["TDebugger", "TDebugger.TestAlgos"],
       entry_points={"console_scripts": [
           "TDebugger = TDebugger.TDebugger:main"]},
@@ -14,10 +14,12 @@ setup(name="TDebugger",
       long_description=long_description,
       long_description_content_type="text/markdown",
       url="https://github.com/CCExtractor/TDebugger",
+
       include_package_data=True,
       install_requires=['Pillow', 'opencv-python', 'numpy', 'pyyaml'],
       classifiers=[
           "Programming Language :: Python :: 3",
           "Programming Language :: Python :: 3.7",
+          "TDebugger",
       ],
       )
