@@ -1,0 +1,11 @@
+README.md
+setup.py
+TDebugger/TDebugger.py
+TDebugger.egg-info/PKG-INFO
+TDebugger.egg-info/SOURCES.txt
+TDebugger.egg-info/dependency_links.txt
+TDebugger.egg-info/entry_points.txt
+TDebugger.egg-info/requires.txt
+TDebugger.egg-info/top_level.txt
+TDebugger/TestAlgos/sorting.py
+TDebugger/TestAlgos/test.py
