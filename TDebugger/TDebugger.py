@@ -227,8 +227,8 @@ class VideoOutput:
         draw.text((0, aspect_ratio[1] * 0.8), "Step: {}, line: {}".format(
             current_step['step'], current_step['line_num']), fill=self.color_theme["normaltext"])
         draw.text((0, aspect_ratio[1] * 0.8 + font_size),
-                  "Times executed: {}, time spent: {}".format(
-                      current_step['line_runtime']['times_executed'], "{0:.2f}".format(current_step['line_runtime']['total_time'])),
+                  "Times executed: {}, time spent: {}s".format(
+                      current_step['line_runtime']['times_executed'], "{0:.7f}".format(current_step['line_runtime']['total_time'])),
                   fill=self.color_theme["normaltext"])
 
         current_text_y = 0
@@ -369,8 +369,10 @@ class Terminal:
         linelogs = self.results["linelogs"]
         print("", end="")
         for line in linelogs:
-            print("Line {}: executed {} times, total runtime {}s".format(line["line_num"], line["times_executed"], "{0:0.07f}".format(line["total_time"]),
-                                                                         ))
+            print("Line {}: executed {} times, total runtime {}s, average time so far {}s".format(line["line_num"], line["times_executed"],
+                                                                                                  "{0:0.07f}".format(
+                line["total_time"]),
+                "{0:0.07f}".format(step["line_runtime"]["total_time"] / step["line_runtime"]["times_executed"],),),)
         print("", end="")
 
 
