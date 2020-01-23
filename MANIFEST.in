@@ -1,0 +1,3 @@
+include TDebugger/config.yaml
+include TDebugger/fonts/*
+include TDebugger/themes/*
