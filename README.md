@@ -11,9 +11,9 @@ TDebugger --help
 ```
 
 ## Output:
-![video](https://github.com/CCExtractor/TDebugger/blob/master/assets/TDebugger.gif)
-![output](https://github.com/CCExtractor/TDebugger/blob/master/assets/py6bubblesort.png)
-![config](https://github.com/CCExtractor/TDebugger/blob/master/assets/py8config.png)
+![video](https://github.com/CCExtractor/TDebugger/raw/master/assets/TDebugger.gif)
+![output](https://github.com/CCExtractor/TDebugger/raw/master/assets/py6bubblesort.png)
+![config](https://github.com/CCExtractor/TDebugger/raw/master/assets/py8config.png)
 
 ## Contributing:
 Please refer [here](https://github.com/CCExtractor/TDebugger/blob/master/CONTRIBUTING.md) for contributing guidelines.
