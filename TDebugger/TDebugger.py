@@ -11,6 +11,8 @@ import inspect
 from PIL import Image, ImageDraw, ImageFont
 import cv2 as cv2
 import numpy
+import yaml
+import textwrap
 
 
 class TD:
@@ -164,7 +166,7 @@ class TDebugger:
 
 
 class VideoOutput:
-    def __init__(self, file_path, func_name, results):
+    def __init__(self, file_path, func_name, results, config):
         module_spec = importlib.util.spec_from_file_location(
             "sourcemodule", file_path)
         module = importlib.util.module_from_spec(module_spec)
@@ -173,28 +175,61 @@ class VideoOutput:
 
         self.source_lines, self.start_line = inspect.getsourcelines(func)
         self.results = results
+        with open(config) as configuration:
+            self.config = yaml.safe_load(configuration)
+            with open(os.path.dirname(__file__) + "./themes/" + self.config["theme"] + ".yaml") as theme_file:
+                self.color_theme = yaml.safe_load(theme_file)
 
-    def framer(self, current_step, variablelogs, frame_size, font_size):
-        background = (0, 0, 0)
-        selectedline = (68, 71, 90)
-        normaltext = (255, 255, 255)
-        updatingtext = (57, 255, 20)
+    def themer(self, font, text, max_width):
+        num_chars = len(text)
+        while font.getsize_multiline(textwrap.fill(text, num_chars))[0] >= max_width:
+            num_chars -= 1
 
-        img = Image.new("RGB", frame_size, color=background)
+        return textwrap.fill(text, num_chars)
 
+    def introthemer(self):
+        intro = self.config["intro-text"]["text"]
+        aspect_ratio = (self.config["size"]["width"],
+                        self.config["size"]["height"])
+        img = Image.new("RGB", aspect_ratio,
+                        color=self.color_theme["background-color"])
+
+        font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(self.config["fonts"]["intro-text"]["font-family"]),
+                                  self.config["fonts"]["intro-text"]["font-size"])
         draw = ImageDraw.Draw(img)
-        draw.rectangle((0, (current_step['line_num'] - self.start_line) * font_size, frame_size[0] * 0.4, (current_step['line_num'] - self.start_line + 1) * font_size),
-                       fill=selectedline)
+        intro = self.themer(font, intro, aspect_ratio[0] * 0.8)
+        introsize = font.getsize_multiline(intro)
+        text_start_x, text_start_y = (
+            aspect_ratio[0] - introsize[0]) / 2, (aspect_ratio[1] - introsize[1]) / 2
+
+        draw.text((text_start_x, text_start_y), intro,
+                  font=font, fill=self.color_theme["normaltext"])
+
+        return img
+
+    def framer(self, current_step, variablelogs):
+        font_size = self.config["fonts"]["default"]["font-size"]
+        aspect_ratio = (self.config["size"]["width"],
+                        self.config["size"]["height"])
+
+        img = Image.new("RGB", aspect_ratio,
+                        color=self.color_theme["background-color"])
+
+        font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(
+            self.config["fonts"]["default"]["font-family"]), self.config["fonts"]["default"]["font-size"])
+        draw = ImageDraw.Draw(img)
+        draw.rectangle((0, (current_step['line_num'] - self.start_line) * font_size, aspect_ratio[0] * 0.4, (current_step['line_num'] - self.start_line + 1) * font_size),
+                       fill=self.color_theme["current-line-color"])
         for line_offset, line in enumerate(self.source_lines):
             draw.text((0, line_offset * font_size),
-                      self.source_lines[line_offset], fill=normaltext)
+                      self.source_lines[line_offset], fill=self.color_theme["normaltext"])
 
-        draw.text((0, frame_size[1] * 0.8), "Step: {}, line: {}".format(
-            current_step['step'], current_step['line_num']), fill=normaltext)
-        draw.text((0, frame_size[1] * 0.8 + font_size),
+        draw.text((0, aspect_ratio[1] * 0.8), "Step: {}, line: {}".format(
+            current_step['step'], current_step['line_num']), fill=self.color_theme["normaltext"])
+        draw.text((0, aspect_ratio[1] * 0.8 + font_size),
                   "Times executed: {}, time spent: {}".format(
                       current_step['line_runtime']['times_executed'], "{0:.2f}".format(current_step['line_runtime']['total_time'])),
-                  fill=normaltext)
+                  fill=self.color_theme["normaltext"])
 
         current_text_y = 0
         variable_changes = {}
@@ -236,27 +271,37 @@ class VideoOutput:
             if variable['var'] in variable_changes:
                 message = "Variable {}, value {}, ".format(
                     variable['var'], curr_value) + ", ".join(variable_changes[variable['var']]) + "."
-                draw.text((frame_size[0] * 0.4 + 5, current_text_y),
-                          message, fill=updatingtext)
+                draw.text((aspect_ratio[0] * 0.4 + 5, current_text_y),
+                          message, fill=self.color_theme["updatingtext"])
             elif curr_value is not None:
-                draw.text((frame_size[0] * 0.4 + 5, current_text_y), "Variable {}, value {}.".format(
-                    variable['var'], curr_value), fill=normaltext)
+                draw.text((aspect_ratio[0] * 0.4 + 5, current_text_y), "Variable {}, value {}.".format(
+                    variable['var'], curr_value), fill=self.color_theme["normaltext"])
             current_text_y += font_size
 
-        draw.line((frame_size[0] * 0.4, 0, frame_size[0] *
-                   0.4, frame_size[1]), fill=(255, 255, 255), width=5)
-        draw.line((0, frame_size[1] * 0.8, frame_size[0] * 0.4,
-                   frame_size[1] * 0.8), fill=(255, 255, 255), width=5)
+        draw.line((aspect_ratio[0] * 0.4, 0, aspect_ratio[0] *
+                   0.4, aspect_ratio[1]), fill=(255, 255, 255), width=2)
+        draw.line((0, aspect_ratio[1] * 0.8, aspect_ratio[0] * 0.4,
+                   aspect_ratio[1] * 0.8), fill=(255, 255, 255), width=2)
 
         return img
 
-    def generate_video(self, output_path, frame_size=(2000, 1000), font_size=22, fps=1):
+    def generate_video(self, output_path):
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        video = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
+
+        aspect_ratio = (self.config["size"]["width"],
+                        self.config["size"]["height"])
+        fps = self.config["fps"]
+        video = cv2.VideoWriter(output_path, fourcc, fps, aspect_ratio)
+        if self.config["intro-text"]["text"]:
+            intro_img = self.introthemer()
+            num_intro_frames = fps * self.config["intro-text"]["time"]
+            for _ in range(num_intro_frames):
+                video.write(cv2.cvtColor(
+                    numpy.array(intro_img), cv2.COLOR_RGB2BGR))
 
         for step in self.results["logs"]:
             img = self.framer(
-                step, self.results["variablelogs"], frame_size, font_size)
+                step, self.results["variablelogs"])
             video.write(cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR))
 
         video.release()
@@ -357,6 +402,8 @@ videoGroup = parser.add_argument_group(
     title="Video Reporting", description="Generating a video displaying the program's flow and execution.")
 videoGroup.add_argument("--video", "-v",
                         metavar=("PYTHON_FILE", "FUNCTION", "ANALYSIS_FILE", "VIDEO_OUTPUT"), nargs=4)
+videoGroup.add_argument("--config", "-c", help="Path of video config file, in .yaml format. \nExample: '--config/-c ./config.yaml'",
+                        default=os.path.dirname(__file__) + "/config.yaml")
 args = parser.parse_args()
 
 if args.debug:
@@ -387,7 +434,8 @@ elif args.parse:
 elif args.video:
     with open(args.video[2], "rb") as f:
         parsed_data = pickle.load(f)
-    reporter = VideoOutput(args.video[0], args.video[1], parsed_data)
+    reporter = VideoOutput(
+        args.video[0], args.video[1], parsed_data, args.config)
     reporter.generate_video(args.video[3])
 else:
     print("Run <<\"TDebugger --help\">>")
