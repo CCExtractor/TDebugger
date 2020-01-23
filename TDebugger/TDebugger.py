@@ -177,7 +177,7 @@ class VideoOutput:
         self.results = results
         with open(config) as configuration:
             self.config = yaml.safe_load(configuration)
-            with open(os.path.dirname(__file__) + "./themes/" + self.config["theme"] + ".yaml") as theme_file:
+            with open(os.path.dirname(__file__) + "/themes/" + self.config["theme"] + ".yaml") as theme_file:
                 self.color_theme = yaml.safe_load(theme_file)
 
     def themer(self, font, text, max_width):

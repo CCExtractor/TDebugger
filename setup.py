@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name="TDebugger",
-      version="0.2.3",
+      version="0.2.3.1",
       packages=["TDebugger", "TDebugger.TestAlgos"],
       entry_points={"console_scripts": [
           "TDebugger = TDebugger.TDebugger:main"]},
