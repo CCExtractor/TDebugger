@@ -277,11 +277,17 @@ class VideoOutput:
                 draw.text((aspect_ratio[0] * 0.4 + 5, current_text_y), "Variable {}, value {}.".format(
                     variable['var'], curr_value), fill=self.color_theme["normaltext"])
             current_text_y += font_size
-
+        separating_line_color = self.color_theme["separating-line-color"]
         draw.line((aspect_ratio[0] * 0.4, 0, aspect_ratio[0] *
-                   0.4, aspect_ratio[1]), fill=(255, 255, 255), width=2)
+                   0.4, aspect_ratio[1]), fill=separating_line_color, width=2)
         draw.line((0, aspect_ratio[1] * 0.8, aspect_ratio[0] * 0.4,
-                   aspect_ratio[1] * 0.8), fill=(255, 255, 255), width=2)
+                   aspect_ratio[1] * 0.8), fill=separating_line_color, width=2)
+       # print(self.config["watermark"])
+        if self.config["watermark"]:
+
+            text_width, text_height = 500, 10
+            draw.text((aspect_ratio[0] - text_width, aspect_ratio[1] - text_height),
+                      "Created using TDebugger", fill=self.color_theme["normaltext"])
 
         return img
 
