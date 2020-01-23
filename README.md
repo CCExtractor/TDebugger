@@ -11,9 +11,8 @@ TDebugger.py --help
 ```
 
 ## Output:
-![video](assets/tdebugger.gif)
-![output](https://github.com/Techno-Disaster/TDebugger/blob/master/assets/py6binarysearch.png)
+![video](https://github.com/CCExtractor/TDebugger/blob/master/assets/TDebugger.gif)
+![output](https://github.com/CCExtractor/TDebugger/blob/master/assets/py6bubblesort.png)
+![config](https://github.com/CCExtractor/TDebugger/blob/master/assets/py8config.png)
 
 
-
-Moving to CCextracter.
