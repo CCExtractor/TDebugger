@@ -9,7 +9,13 @@ Then, you can run it as a command-line tool:
 ```shell script
 TDebugger --help
 ```
-
+## Todo: 
+A todo list of features to be implemented:
+- [ ] Allow selecting output resolution.
+- [ ] Allow exporting to animated gif - this will make the video easy to embbed.
+- [ ] Scrollable code in video.
+- [ ] Custom arguments.
+- [ ] Add actual print statements given out by the program in video.
 ## Output:
 ![video](https://github.com/CCExtractor/TDebugger/raw/master/assets/TDebugger.gif)
 ![output](https://github.com/CCExtractor/TDebugger/raw/master/assets/py6bubblesort.png)
