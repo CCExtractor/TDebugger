@@ -179,7 +179,7 @@ class VideoOutput:
         self.results = results
         with open(config) as configuration:
             self.config = yaml.safe_load(configuration)
-            with open(os.path.dirname(__file__) + "/themes/" + self.config["theme"] + ".yaml") as theme_file:
+            with open(os.path.dirname(__file__) + "./themes/" + self.config["theme"] + ".yaml") as theme_file:
                 self.color_theme = yaml.safe_load(theme_file)
 
     def themer(self, font, text, max_width):
@@ -198,6 +198,7 @@ class VideoOutput:
 
         font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(self.config["fonts"]["intro-text"]["font-family"]),
                                   self.config["fonts"]["intro-text"]["font-size"])
+        print(font),
         draw = ImageDraw.Draw(img)
         intro = self.themer(font, intro, aspect_ratio[0] * 0.8)
         introsize = font.getsize_multiline(intro)
@@ -219,6 +220,7 @@ class VideoOutput:
 
         font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(
             self.config["fonts"]["default"]["font-family"]), self.config["fonts"]["default"]["font-size"])
+        print(font),
         draw = ImageDraw.Draw(img)
         draw.rectangle((0, (current_step['line_num'] - self.start_line) * font_size, aspect_ratio[0] * 0.4, (current_step['line_num'] - self.start_line + 1) * font_size),
                        fill=self.color_theme["current-line-color"])
@@ -286,10 +288,14 @@ class VideoOutput:
                    aspect_ratio[1] * 0.8), fill=separating_line_color, width=2)
        # print(self.config["watermark"])
         if self.config["watermark"]:
-
+            print("path = " + os.path.abspath(os.path.join(os.path.dirname(__file__))
+                                              ) + "/fonts/OpenSans-Italic.ttf")
+            watermarkfont = ImageFont.truetype(os.path.abspath(os.path.join(
+                os.path.dirname(__file__))) + "/fonts/OpenSans-Italic.ttf", 22)
+            # https://stackoverflow.com/questions/49422220/error-in-free-invalid-size
             text_width, text_height = 500, 10
             draw.text((aspect_ratio[0] - text_width, aspect_ratio[1] - text_height),
-                      "Created using TDebugger", fill=self.color_theme["normaltext"])
+                      "Created using TDebugger", font=watermarkfont, fill=self.color_theme["normaltext"])
 
         return img
 
@@ -413,7 +419,7 @@ videoGroup = parser.add_argument_group(
 videoGroup.add_argument("--video", "-v",
                         metavar=("PYTHON_FILE", "FUNCTION", "ANALYSIS_FILE", "VIDEO_OUTPUT"), nargs=4)
 videoGroup.add_argument("--config", "-c", help="Path of video config file, in .yaml format. \nExample: '--config/-c ./config.yaml'",
-                        default=os.path.dirname(__file__) + "/config.yaml")
+                        default=os.path.dirname(__file__) + "./config.yaml")
 args = parser.parse_args()
 
 if args.debug:
