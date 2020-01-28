@@ -11,7 +11,7 @@ TDebugger --help
 ```
 ## Todo: 
 A todo list of features to be implemented:
-- [ ] Allow selecting output resolution.
+- [x] Allow selecting output resolution.
 - [x] Allow exporting to animated gif - this will make the video easy to embbed.
 - [ ] Scrollable code in video.
 - [ ] Custom arguments.
