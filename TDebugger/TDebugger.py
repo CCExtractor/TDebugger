@@ -13,7 +13,9 @@ import cv2 as cv2
 import numpy
 import yaml
 import textwrap
-
+import imageio
+import os
+import sys
 
 class TD:
     def __init__(self, name, line, step, value):
@@ -196,17 +198,17 @@ class VideoOutput:
         img = Image.new("RGB", aspect_ratio,
                         color=self.color_theme["background-color"])
 
-        font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(self.config["fonts"]["intro-text"]["font-family"]),
-                                  self.config["fonts"]["intro-text"]["font-size"])
-        print(font),
+        introfont = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(self.config["fonts"]["intro-text"]["font-family"]),
+                                       self.config["fonts"]["intro-text"]["font-size"])
+        print(introfont),
         draw = ImageDraw.Draw(img)
-        intro = self.themer(font, intro, aspect_ratio[0] * 0.8)
-        introsize = font.getsize_multiline(intro)
+        intro = self.themer(introfont, intro, aspect_ratio[0] * 0.8)
+        introsize = introfont.getsize_multiline(intro)
         text_start_x, text_start_y = (
             aspect_ratio[0] - introsize[0]) / 2, (aspect_ratio[1] - introsize[1]) / 2
 
         draw.text((text_start_x, text_start_y), intro,
-                  font=font, fill=self.color_theme["normaltext"])
+                  font=introfont, fill=self.color_theme["normaltext"])
 
         return img
 
@@ -218,9 +220,11 @@ class VideoOutput:
         img = Image.new("RGB", aspect_ratio,
                         color=self.color_theme["background-color"])
 
-        font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(
-            self.config["fonts"]["default"]["font-family"]), self.config["fonts"]["default"]["font-size"])
-        print(font),
+        # font = ImageFont.truetype(os.path.dirname(__file__) + "./fonts/{}.ttf".format(
+        #     self.config["fonts"]["default"]["font-family"]), self.config["fonts"]["default"]["font-size"])
+        # watermarkfont = ImageFont.truetype(os.path.dirname(
+        #     __file__) + "fonts/OpenSansBold.ttf", 22)
+
         draw = ImageDraw.Draw(img)
         draw.rectangle((0, (current_step['line_num'] - self.start_line) * font_size, aspect_ratio[0] * 0.4, (current_step['line_num'] - self.start_line + 1) * font_size),
                        fill=self.color_theme["current-line-color"])
@@ -286,16 +290,10 @@ class VideoOutput:
                    0.4, aspect_ratio[1]), fill=separating_line_color, width=2)
         draw.line((0, aspect_ratio[1] * 0.8, aspect_ratio[0] * 0.4,
                    aspect_ratio[1] * 0.8), fill=separating_line_color, width=2)
-       # print(self.config["watermark"])
         if self.config["watermark"]:
-            print("path = " + os.path.abspath(os.path.join(os.path.dirname(__file__))
-                                              ) + "/fonts/OpenSans-Italic.ttf")
-            watermarkfont = ImageFont.truetype(os.path.abspath(os.path.join(
-                os.path.dirname(__file__))) + "/fonts/OpenSans-Italic.ttf", 22)
-            # https://stackoverflow.com/questions/49422220/error-in-free-invalid-size
             text_width, text_height = 500, 10
             draw.text((aspect_ratio[0] - text_width, aspect_ratio[1] - text_height),
-                      "Created using TDebugger", font=watermarkfont, fill=self.color_theme["normaltext"])
+                      "Created using TDebugger", fill=self.color_theme["normaltext"])
 
         return img
 
@@ -319,6 +317,30 @@ class VideoOutput:
             video.write(cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR))
 
         video.release()
+
+
+class TargetFormat(object):
+    GIF = ".gif"
+    MP4 = ".mp4"
+    AVI = ".avi"
+
+
+def convertFile(inputpath, targetFormat):
+    """Reference: http://imageio.readthedocs.io/en/latest/examples.html#convert-a-movie"""
+    outputpath = os.path.splitext(inputpath)[0] + targetFormat
+    print("converting\r\n\t{0}\r\nto\r\n\t{1}".format(inputpath, outputpath))
+
+    reader = imageio.get_reader(inputpath)
+    fps = reader.get_meta_data()['fps']
+
+    writer = imageio.get_writer(outputpath, fps=fps)
+    for i, im in enumerate(reader):
+        sys.stdout.write("\rframe {0}".format(i))
+        sys.stdout.flush()
+        writer.append_data(im)
+    print("\r\nFinalizing...")
+    writer.close()
+    print("Done.")
 
 
 class Terminal:
@@ -420,6 +442,8 @@ videoGroup.add_argument("--video", "-v",
                         metavar=("PYTHON_FILE", "FUNCTION", "ANALYSIS_FILE", "VIDEO_OUTPUT"), nargs=4)
 videoGroup.add_argument("--config", "-c", help="Path of video config file, in .yaml format. \nExample: '--config/-c ./config.yaml'",
                         default=os.path.dirname(__file__) + "./config.yaml")
+videoGroup.add_argument(
+    "--convert", help="convert mp4 video outputs to gif fotmat")
 args = parser.parse_args()
 
 if args.debug:
@@ -453,5 +477,10 @@ elif args.video:
     reporter = VideoOutput(
         args.video[0], args.video[1], parsed_data, args.config)
     reporter.generate_video(args.video[3])
+elif args.convert:
+    mp4video = args.convert,
+    convertedtolist = ''.join(mp4video)
+   # print(convertedtolist)
+    convertFile(convertedtolist, ".gif")
 else:
     print("Run <<\"TDebugger --help\">>")
